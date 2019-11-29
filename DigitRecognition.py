@@ -1,71 +1,62 @@
-# import required modules
-import keras
-import sys
-import cv2
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense
-
-# import MNIST dataset
+import keras
+from keras.models import Sequential, load_model
+from keras.layers.core import Dense, Dropout, Activation
+from keras.utils import np_utils
+from keras.models import load_model
 from keras.datasets import mnist
+import os.path
 
-# load data
-(x_train,y_train), (x_test,y_test) = mnist.load_data()
+def build():
 
-# preprocessing
-x_test = x_test.reshape(x_test.shape[0], 784)
-x_train = x_train.reshape(x_train.shape[0], 784)
-x_test = x_test.astype('float32')
-x_train = x_train.astype('float32')
+    # load data
+    (x_train,y_train), (x_test,y_test) = mnist.load_data()
 
-x_test /= 255
-x_train /= 255
-y_test = keras.utils.to_categorical(y_test, 10)
-y_train = keras.utils.to_categorical(y_train, 10)
+    #reshape the array to a 1d array
+    x_test = x_test.reshape(x_test.shape[0], 784)
+    x_train = x_train.reshape(x_train.shape[0], 784)
 
-# create model
-model = Sequential()
-model.add(Dense(16, input_dim=784, activation='relu'))
-model.add(Dense(16, activation='relu'))
-model.add(Dense(10, activation='softmax'))
+    #set array types to  float32
+    x_test = x_test.astype('float32')
+    x_train = x_train.astype('float32')
 
-# compile the model
-model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+    #convert the array to black and white
+    x_test /= 255
+    x_train /= 255
 
-# fit model to the training data
-model.fit(x_train, y_train, batch_size=100, epochs=10, verbose=1)
+    #Adds layers for 10 classes
+    y_test = keras.utils.to_categorical(y_test, 10)
+    y_train = keras.utils.to_categorical(y_train, 10)
 
-# evaluate the model on test set 
-score = model.evaluate(x_test, y_test, batch_size=100, verbose=0)
+    # create model
+    model = Sequential()
+    model.add(Dense(16, input_dim=784, activation='relu'))
+    model.add(Dense(16, activation='relu'))
+    model.add(Dense(10, activation='softmax'))
 
-print("\nTest set loss: ", score[0])
-print("Test set accuracy: ", score[1])
+    #compile the model
+    model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
 
-print(len(sys.argv))
-# load input photo
-if(len(sys.argv) == 2):
+    #fit model to the training data
+    model.fit(x_train, y_train, batch_size=100, epochs=10, verbose=1)
+
+    #save the model
+    model.save("models/model")
+
+    return model
+
+def prediction(image):
+    #Create model if not made already
     try:
-        img = cv2.imread(sys.argv[1])
-     # must catch errors
-    # File not found
-    except FileNotFoundError:
-        print("(ERROR)--> ", menuOption, " image not found !")
+        model = load_model("models/model")
+    except:
+        print("Could not load model, creating new")
+        model = build()
 
-    # convert image
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.resize(img, (28, 28), interpolation = cv2.INTER_AREA)
-    img = cv2.bitwise_not(img)
-    img = img.reshape(1, 784)
-    img = img.astype('float32')
-    img /= 255    
-
-    # predict the handwritten digit in the input image 
-    score = model.predict(img, batch_size=1, verbose=0)
+    #Makes prediction
+    labelPredict = model.predict(image)
     
-    # display scores    
-    print("\nPrediction score for test input: " + sys.argv[1])
-    sort = sorted(range(len(score[0])), key=lambda k:score[0][k],reverse=True)
-    for index in sort:
-        print(str(index) + ": " + str(score[0][index]))
+    #returns the index of the latest number in the array which is the prediction
+    return labelPredict.argmax()
 
-    print("\nThe image should be: "+ str(sort[0]))
+
