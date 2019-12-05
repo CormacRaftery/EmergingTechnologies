@@ -1,0 +1,77 @@
+<html>
+
+<head></head>
+<div align="center">
+	<h1>Draw a number between 0 and 9!</h1>
+</div>
+
+<body>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"> type = "text/javascript" >
+	</script>
+	<div align="center">
+		<canvas id="myCanvas" width="300" height="300" style="border:2px solid black"></canvas>
+		<br />
+		<h1 id="prediction"></h1>
+		<button onclick="clearArea()">Clear Area</button>
+	</div>
+	<br>
+	<div align="center">
+		<button onclick="predict()">Prediction</button>
+	</div>
+</body>
+
+<script type="text/javascript">
+	const ctx = document.getElementById('myCanvas').getContext('2d');
+	ctx.strokeStyle = "#FF0000"
+
+	var mousePressed = false;
+	var lastX, lastY;
+	//initial mousedown
+	$('#myCanvas').mousedown(function (e) {
+		mousePressed = true;
+		Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, false);
+	});
+	//as the mouse moves
+	$('#myCanvas').mousemove(function (e) {
+		if (mousePressed) {
+			Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, true);
+		}
+	});
+	//detects when to stop drawing
+	$('#myCanvas').mouseup(function (e) {
+		mousePressed = false;
+	});
+	//draw function
+	function Draw(x, y, isDown) {
+		if (isDown) {
+			ctx.beginPath();
+			ctx.lineWidth = 10;
+			ctx.lineJoin = "round";
+			ctx.moveTo(lastX, lastY);
+			ctx.lineTo(x, y);
+			ctx.closePath();
+			ctx.stroke();
+		}
+		lastX = x; lastY = y;
+	}
+	//Clears the canvas
+	function clearArea() {
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	}
+	//posts image to server so flask app can react to the post and read the image
+	var server = "http://127.0.0.1:5000/";
+	function predict() {
+		var appdir = '/';
+		var send_msg = document.getElementById('myCanvas').toDataURL();
+
+		$.post(server, {
+			"imageBase64": send_msg
+		},
+			function (data) {
+				$("#prediction").empty().append(data);
+			});
+	}
+
+</script>
+
+</html>
