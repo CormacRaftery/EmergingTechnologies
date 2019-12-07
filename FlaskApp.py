@@ -1,7 +1,5 @@
 #Imports
 from flask import Flask, json, jsonify, render_template, request
-#Imports
-from flask import Flask, json, jsonify, render_template, request
 import numpy as np
 from DigitRecognition import prediction
 import sys
@@ -36,8 +34,8 @@ def getImage():
     #Converting the decoded image to bytes
     img = Image.open(BytesIO(imgDecoded))
 
-    #Convert the image to black  and white
-    img = img.convert('1')
+    #Convert the image to grayscale
+    img = img.convert('L')
 
     #Resizes the image to the required size of 28x28 using Bilinear mode
     img = img.resize((28, 28), Image.ANTIALIAS)
